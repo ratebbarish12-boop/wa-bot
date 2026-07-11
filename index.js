@@ -18,13 +18,13 @@ async function startBot() {
 
   const sock = makeWASocket({
     auth: state,
-    logger: pino({ level: "silent" })
+    logger: pino({ level: "silent" }),
+    browser: ["Chrome", "Windows", "10"]
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async (update) => {
-    const { connection } = update;
+  sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
 
     if (connection === "open") {
       console.log("WhatsApp Connected!");
@@ -32,19 +32,16 @@ async function startBot() {
 
     if (connection === "close") {
       console.log("Connection closed");
+      startBot();
     }
   });
 
   if (!state.creds.registered) {
     setTimeout(async () => {
-      try {
-        const phoneNumber = "93772798327";
-        const code = await sock.requestPairingCode(phoneNumber);
-        console.log("Pairing Code:", code);
-      } catch (error) {
-        console.log("Pairing code error:", error.message);
-      }
-    }, 5000);
+      const phoneNumber = "93772798327";
+      const code = await sock.requestPairingCode(phoneNumber);
+      console.log("Pairing Code:", code);
+    }, 10000);
   }
 }
 
