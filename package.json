@@ -9,6 +9,7 @@
     "@whiskeysockets/baileys": "latest",
     "axios": "latest",
     "ytdl-core": "latest",
-    "pino": "latest"
+    "pino": "latest",
+    "qrcode-terminal": "latest"
   }
 }
