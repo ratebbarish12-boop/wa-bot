@@ -23,13 +23,7 @@ async function startBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  if (!sock.authState?.creds?.registered) {
-    const phoneNumber = "93772798327";
-    const code = await sock.requestPairingCode(phoneNumber);
-    console.log("Pairing Code:", code);
-  }
-
-  sock.ev.on("connection.update", (update) => {
+  sock.ev.on("connection.update", async (update) => {
     const { connection } = update;
 
     if (connection === "open") {
@@ -38,9 +32,20 @@ async function startBot() {
 
     if (connection === "close") {
       console.log("Connection closed");
-      startBot();
     }
   });
+
+  if (!state.creds.registered) {
+    setTimeout(async () => {
+      try {
+        const phoneNumber = "93772798327";
+        const code = await sock.requestPairingCode(phoneNumber);
+        console.log("Pairing Code:", code);
+      } catch (error) {
+        console.log("Pairing code error:", error.message);
+      }
+    }, 5000);
+  }
 }
 
 startBot();
