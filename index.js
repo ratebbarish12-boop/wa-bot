@@ -1,5 +1,6 @@
 const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
 const pino = require("pino");
+const qrcode = require("qrcode-terminal");
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
@@ -15,7 +16,7 @@ async function startBot() {
     const { connection, qr } = update;
 
     if (qr) {
-      console.log("QR CODE:", qr);
+      qrcode.generate(qr, { small: true });
     }
 
     if (connection === "open") {
