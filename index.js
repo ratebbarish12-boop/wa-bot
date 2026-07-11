@@ -1,6 +1,5 @@
 const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
 const pino = require("pino");
-const qrcode = require("qrcode-terminal");
 const express = require("express");
 
 const app = express();
@@ -24,12 +23,14 @@ async function startBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", (update) => {
-    const { connection, qr } = update;
+  if (!sock.authState?.creds?.registered) {
+    const phoneNumber = "93772798327";
+    const code = await sock.requestPairingCode(phoneNumber);
+    console.log("Pairing Code:", code);
+  }
 
-    if (qr) {
-      qrcode.generate(qr, { small: true });
-    }
+  sock.ev.on("connection.update", (update) => {
+    const { connection } = update;
 
     if (connection === "open") {
       console.log("WhatsApp Connected!");
