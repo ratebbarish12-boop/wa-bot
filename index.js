@@ -13,48 +13,51 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
 });
 
+let isStarting = false;
+
 async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState("auth");
+  if (isStarting) return;
+  isStarting = true;
+
+  const { state, saveCreds } = await useMultiFileAuthState("auth-new");
 
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: "silent" }),
-    browser: ["Ubuntu", "Chrome", "20"]
+    browser: ["Ubuntu", "Chrome", "20"],
+    markOnlineOnConnect: false
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect } = update;
+  sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
 
-    if (connection === "open") {
-      console.log("✅ WhatsApp Connected!");
-    }
-
-    if (connection === "connecting") {
-      if (!state.creds.registered) {
-        try {
-          const code = await sock.requestPairingCode("93772798327");
-          console.log("====================");
-          console.log("PAIRING CODE:", code);
-          console.log("====================");
-        } catch (err) {
-          console.log("Pairing code error:", err.message);
-        }
+    if (connection === "connecting" && !state.creds.registered) {
+      try {
+        const code = await sock.requestPairingCode("93772798327");
+        console.log("================================");
+        console.log("PAIRING CODE:", code);
+        console.log("================================");
+      } catch (e) {
+        console.log("Pairing error:", e.message);
       }
     }
 
+    if (connection === "open") {
+      console.log("✅ WhatsApp Connected!");
+      isStarting = false;
+    }
+
     if (connection === "close") {
+      isStarting = false;
+
       const reason = lastDisconnect?.error?.output?.statusCode;
-      console.log("❌ Connection closed:", reason);
+      console.log("Connection closed:", reason);
 
       if (reason !== DisconnectReason.loggedOut) {
         setTimeout(() => {
-          console.log("🔄 Restarting...");
           startBot();
-        }, 5000);
-      } else {
-        console.log("Logged out. Delete auth folder and restart.");
+        }, 10000);
       }
     }
   });
