@@ -6,7 +6,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "latest",
+    "@whiskeysockets/baileys": "6.7.18",
     "express": "latest",
     "pino": "^9.0.0",
     "qrcode-terminal": "^0.12.0"
