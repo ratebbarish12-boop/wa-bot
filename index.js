@@ -34,7 +34,7 @@ async function startBot() {
 
       setTimeout(async () => {
         try {
-          const code = await sock.requestPairingCode("93772798327", "RATEBOT");
+          const code = await sock.requestPairingCode("93772798327");
 
           console.log("==============================");
           console.log("PAIRING CODE:", code);
@@ -53,7 +53,6 @@ async function startBot() {
 
     if (connection === "close") {
       const reason = lastDisconnect?.error?.output?.statusCode;
-
       console.log("❌ Connection closed:", reason);
 
       if (reason !== DisconnectReason.loggedOut) {
