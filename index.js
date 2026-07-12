@@ -1,7 +1,7 @@
 const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const express = require("express");
-const QRCode = require("qrcode");
+const qrcode = require("qrcode-terminal");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -11,7 +11,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log(`Server running on port ${PORT}`);
 });
 
 async function startBot() {
@@ -20,24 +20,19 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: "silent" }),
-    printQRInTerminal: false,
+    printQRInTerminal: true,
     browser: ["Chrome", "Windows", "10"]
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async ({ connection, qr }) => {
-    if (qr) {
-      console.log("QR CODE:");
-      console.log(await QRCode.toDataURL(qr));
-    }
-
+  sock.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
       console.log("✅ WhatsApp Connected!");
     }
 
     if (connection === "close") {
-      console.log("❌ Connection closed");
+      console.log("❌ Connection closed. Restarting...");
       setTimeout(startBot, 5000);
     }
   });
