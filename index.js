@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const express = require("express");
 
@@ -19,7 +19,8 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: "silent" }),
-    browser: ["Ubuntu", "Chrome", "20"]
+    browser: ["Ubuntu", "Chrome", "20"],
+    printQRInTerminal: false
   });
 
   sock.ev.on("creds.update", saveCreds);
@@ -31,22 +32,34 @@ async function startBot() {
     }
 
     if (connection === "close") {
-      console.log("❌ WhatsApp connection closed");
+      const reason = lastDisconnect?.error?.output?.statusCode;
+
+      console.log("❌ Connection closed:", reason);
+
+      setTimeout(() => {
+        console.log("🔄 Restarting connection...");
+        startBot();
+      }, 5000);
     }
   });
 
   if (!state.creds.registered) {
-    console.log("Generating pairing code...");
-
     try {
-      const code = await sock.requestPairingCode("93772798327");
+      await new Promise(resolve => setTimeout(resolve, 5000));
 
-      console.log("======================");
+      console.log("Generating pairing code...");
+
+      const phoneNumber = "93772798327";
+
+      const code = await sock.requestPairingCode(phoneNumber);
+
+      console.log("==============================");
       console.log("PAIRING CODE:", code);
-      console.log("======================");
+      console.log("==============================");
 
-    } catch (error) {
-      console.log("Pairing error:", error.message);
+    } catch (err) {
+      console.log("Pairing code error:");
+      console.log(err.message);
     }
   }
 }
