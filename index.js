@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const express = require("express");
 
@@ -10,7 +10,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log("Server running on port " + PORT);
 });
 
 async function startBot() {
@@ -19,37 +19,50 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: "silent" }),
-    browser: ["Chrome", "Windows", "10"],
+    printQRInTerminal: false,
+    browser: ["Ubuntu", "Chrome", "20"]
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async ({ connection }) => {
+  sock.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+
     if (connection === "open") {
       console.log("✅ WhatsApp Connected!");
     }
 
     if (connection === "close") {
-      console.log("❌ Connection closed");
-      process.exit(1);
+      const reason = lastDisconnect?.error?.output?.statusCode;
+
+      console.log("❌ Connection closed:", reason);
+
+      if (reason !== DisconnectReason.loggedOut) {
+        console.log("🔄 Reconnecting...");
+        setTimeout(() => startBot(), 5000);
+      } else {
+        console.log("WhatsApp logged out. Delete auth folder and pair again.");
+      }
     }
   });
 
   if (!state.creds.registered) {
     try {
-      console.log("Generating pairing code...");
+      await new Promise(resolve => setTimeout(resolve, 15000));
 
       const phoneNumber = "93772798327";
+
       const code = await sock.requestPairingCode(phoneNumber);
 
-      console.log("=================================");
-      console.log("Pairing Code:", code);
-      console.log("=================================");
-    } catch (err) {
-      console.error("Failed to generate pairing code:");
-      console.error(err);
+      console.log("==============================");
+      console.log("PAIRING CODE:", code);
+      console.log("==============================");
+
+    } catch (error) {
+      console.log("Pairing code error:");
+      console.log(error.message);
     }
   }
 }
 
-startBot().catch(console.error);
+startBot();
