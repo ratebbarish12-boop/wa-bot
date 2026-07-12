@@ -19,7 +19,7 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: "silent" }),
-    browser: ["Ubuntu", "Chrome", "20"],
+    browser: ["Chrome", "Windows", "10"],
     markOnlineOnConnect: false
   });
 
@@ -34,7 +34,7 @@ async function startBot() {
 
       setTimeout(async () => {
         try {
-          const code = await sock.requestPairingCode("93772798327");
+          const code = await sock.requestPairingCode("93772798327", "RATEBOT");
 
           console.log("==============================");
           console.log("PAIRING CODE:", code);
@@ -44,7 +44,7 @@ async function startBot() {
           console.log("Pairing error:", err.message);
           pairingStarted = false;
         }
-      }, 5000);
+      }, 3000);
     }
 
     if (connection === "open") {
