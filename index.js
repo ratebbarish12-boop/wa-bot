@@ -10,7 +10,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log("Server running on port " + PORT);
+  console.log(`Server running on port ${PORT}`);
 });
 
 async function startBot() {
@@ -19,30 +19,37 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: "silent" }),
-    browser: ["Chrome", "Windows", "10"]
+    browser: ["Chrome", "Windows", "10"],
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
-
+  sock.ev.on("connection.update", async ({ connection }) => {
     if (connection === "open") {
-      console.log("WhatsApp Connected!");
+      console.log("✅ WhatsApp Connected!");
     }
 
     if (connection === "close") {
-      console.log("Connection closed");
-      startBot();
+      console.log("❌ Connection closed");
+      process.exit(1);
     }
   });
 
   if (!state.creds.registered) {
-    setTimeout(async () => {
+    try {
+      console.log("Generating pairing code...");
+
       const phoneNumber = "93772798327";
       const code = await sock.requestPairingCode(phoneNumber);
+
+      console.log("=================================");
       console.log("Pairing Code:", code);
-    }, 10000);
+      console.log("=================================");
+    } catch (err) {
+      console.error("Failed to generate pairing code:");
+      console.error(err);
+    }
   }
 }
 
-startBot();
+startBot().catch(console.error);
