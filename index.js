@@ -13,12 +13,7 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log("Server running on port " + PORT);
 });
 
-let isStarting = false;
-
 async function startBot() {
-  if (isStarting) return;
-  isStarting = true;
-
   const { state, saveCreds } = await useMultiFileAuthState("auth-new");
 
   const sock = makeWASocket({
@@ -30,29 +25,36 @@ async function startBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
+  let pairingStarted = false;
+
   sock.ev.on("connection.update", async ({ connection, lastDisconnect }) => {
 
-    if (connection === "connecting" && !state.creds.registered) {
-      try {
-        const code = await sock.requestPairingCode("93772798327");
-        console.log("================================");
-        console.log("PAIRING CODE:", code);
-        console.log("================================");
-      } catch (e) {
-        console.log("Pairing error:", e.message);
-      }
+    if (connection === "connecting" && !state.creds.registered && !pairingStarted) {
+      pairingStarted = true;
+
+      setTimeout(async () => {
+        try {
+          const code = await sock.requestPairingCode("93772798327");
+
+          console.log("==============================");
+          console.log("PAIRING CODE:", code);
+          console.log("==============================");
+
+        } catch (err) {
+          console.log("Pairing error:", err.message);
+          pairingStarted = false;
+        }
+      }, 5000);
     }
 
     if (connection === "open") {
       console.log("✅ WhatsApp Connected!");
-      isStarting = false;
     }
 
     if (connection === "close") {
-      isStarting = false;
-
       const reason = lastDisconnect?.error?.output?.statusCode;
-      console.log("Connection closed:", reason);
+
+      console.log("❌ Connection closed:", reason);
 
       if (reason !== DisconnectReason.loggedOut) {
         setTimeout(() => {
